@@ -3,94 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CivicFix - Pothole & Waterlogging Tracker</title>
+    <title>CivicFix - Smart Grievance Portal</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f4f6f9; color: #333; }
-        header { background-color: #1a252f; color: #fff; padding: 1rem 2rem; text-align: center; }
-        header h1 { font-size: 1.8rem; }
-        header p { font-size: 0.9rem; color: #bdc3c7; }
-        .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
-        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 2rem; }
-        .card h2 { color: #2c3e50; margin-bottom: 1rem; font-size: 1.3rem; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5rem; }
-        .form-group { margin-bottom: 1.2rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
-        .btn-submit { background-color: #e74c3c; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 4px; cursor: pointer; font-size: 1rem; font-weight: bold; width: 100%; transition: background 0.3s; }
-        .btn-submit:hover { background-color: #c0392b; }
-        .report-list { list-style: none; }
+        header { background-color: #1a252f; color: #fff; padding: 1.2rem; text-align: center; }
+        .container { max-width: 800px; margin: 1.5rem auto; padding: 0 1rem; }
+        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
+        .card h2 { color: #2c3e50; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.7rem; border: 1px solid #ccc; border-radius: 4px; }
+        .btn-gps { background-color: #27ae60; color: white; border: none; padding: 0.6rem; border-radius: 4px; cursor: pointer; margin-bottom: 0.5rem; width: 100%; font-weight: bold; }
+        .btn-otp { background-color: #2980b9; color: white; border: none; padding: 0.6rem 1rem; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 0.4rem; width: 100%; }
+        .btn-submit { background-color: #e74c3c; color: white; border: none; padding: 0.8rem; border-radius: 4px; cursor: pointer; font-size: 1rem; font-weight: bold; width: 100%; margin-top: 0.5rem; }
+        #map { height: 220px; width: 100%; border-radius: 6px; margin-bottom: 1rem; }
         .report-item { background: #fafafa; border-left: 4px solid #e74c3c; padding: 1rem; margin-bottom: 1rem; border-radius: 0 4px 4px 0; }
-        .report-item h3 { font-size: 1.1rem; color: #333; }
-        .report-item p { font-size: 0.9rem; color: #666; margin-top: 0.3rem; }
+        .report-img { max-width: 100%; height: 180px; object-fit: cover; border-radius: 4px; margin-top: 0.5rem; }
         .badge { display: inline-block; padding: 0.2rem 0.5rem; font-size: 0.8rem; border-radius: 3px; color: white; background-color: #e67e22; margin-top: 0.5rem; }
+        .badge-verified { background-color: #27ae60; }
+        .tracking-id { font-weight: bold; color: #2980b9; }
+        .otp-box { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
+        .otp-box input { flex: 1; }
+        .otp-box button { width: auto; margin-top: 0; background-color: #27ae60; }
+        .status-msg { font-weight: bold; color: #27ae60; font-size: 0.85rem; margin-top: 0.3rem; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🚨 CivicFix Portal</h1>
-        <p>सड़क के गड्ढों और जलभराव की समस्या दर्ज करें (Civic Grievance Portal)</p>
+        <h1>🚨 CivicFix Smart Grievance Portal</h1>
+        <p>फोटो, GPS लोकेशन, पिन कोड व OTP सत्यापन के साथ शिकायत दर्ज करें</p>
     </header>
 
     <div class="container">
         <!-- Complaint Form -->
         <div class="card">
-            <h2>नई शिकायत दर्ज करें (Report Issue)</h2>
+            <h2>नई शिकायत दर्ज करें (Report Grievance)</h2>
             <form id="issueForm">
+                
                 <div class="form-group">
-                    <label for="issueType">समस्या का प्रकार (Issue Type)</label>
+                    <label>समस्या का प्रकार (Issue Type)</label>
                     <select id="issueType" required>
-                        <option value="Pothole">सड़क का गड्ढा (Potholes)</option>
+                        <option value="Pothole">सड़क का गड्ढा (Pothole)</option>
                         <option value="Waterlogging">जलभराव (Waterlogging)</option>
                         <option value="Damaged Road">टूटी सड़क (Damaged Road)</option>
                     </select>
                 </div>
+
+                <!-- Feature 1: Mobile & OTP Verification -->
                 <div class="form-group">
-                    <label for="location">स्थान / लैंडमार्क (Location)</label>
-                    <input type="text" id="location" placeholder="जैसे: मुख्य बाज़ार रोड, कैराना" required>
+                    <label>मोबाइल नंबर (Mobile Number)</label>
+                    <input type="tel" id="mobile" placeholder="10 अंकों का मोबाइल नंबर दर्ज करें" pattern="[0-9]{10}" required>
+                    <button type="button" class="btn-otp" onclick="sendOTP()">OTP भेजें (Get OTP)</button>
                 </div>
+
+                <div class="form-group" id="otpSection" style="display:none;">
+                    <label>OTP सत्यापित करें</label>
+                    <div class="otp-box">
+                        <input type="text" id="otpInput" placeholder="4-अंकों का OTP डालें" maxlength="4">
+                        <button type="button" class="btn-otp" onclick="verifyOTP()">Verify OTP</button>
+                    </div>
+                    <div id="otpMessage" class="status-msg"></div>
+                </div>
+
+                <!-- Feature 2: Current Location GPS Button & Map -->
                 <div class="form-group">
-                    <label for="description">विवरण (Description)</label>
-                    <textarea id="description" rows="3" placeholder="समस्या के बारे में थोड़ी जानकारी दें..." required></textarea>
+                    <label>आपकी करंट लोकेशन (Current Location)</label>
+                    <button type="button" class="btn-gps" onclick="getLocation()">📍 करंट GPS लोकेशन सेट करें</button>
+                    <div id="map"></div>
                 </div>
-                <button type="submit" class="btn-submit">शिकायत सबमिट करें</button>
+
+                <!-- Feature 3: Pincode -->
+                <div class="form-group">
+                    <label>पिन कोड (Pincode)</label>
+                    <input type="text" id="pincode" placeholder="उदा: 247774" pattern="[0-9]{6}" maxlength="6" required>
+                </div>
+
+                <div class="form-group">
+                    <label>स्थान / पता (Landmark / Address)</label>
+                    <input type="text" id="location" placeholder="उदा: मुख्य बाज़ार रोड, कैराना" required>
+                </div>
+
+                <!-- Feature 4: 1 Photo Upload -->
+                <div class="form-group">
+                    <label>समस्या की 1 फोटो अपलोड करें (Upload Photo)</label>
+                    <input type="file" id="photo" accept="image/*" capture="environment" required>
+                </div>
+
+                <div class="form-group">
+                    <label>विवरण (Description)</label>
+                    <textarea id="description" rows="2" placeholder="समस्या का विवरण दर्ज करें..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">शिकायत दर्ज करें (Submit)</button>
             </form>
         </div>
 
-        <!-- Recent Complaints List -->
+        <!-- Complaints Tracker List -->
         <div class="card">
-            <h2>हाल ही में दर्ज की गई शिकायतें (Recent Reports)</h2>
-            <div id="reportsContainer">
-                <div class="report-item">
-                    <h3>सड़क का गड्ढा (Potholes)</h3>
-                    <p><strong>स्थान:</strong> मेन चौराहा, पास पुलिस चौकी</p>
-                    <p>बड़ा गड्ढा है जिससे हादसों का खतरा बना रहता है।</p>
-                    <span class="badge">Pending Action</span>
-                </div>
-            </div>
+            <h2>हाल ही में दर्ज शिकायतें (Live Grievance Tracker)</h2>
+            <div id="reportsContainer"></div>
         </div>
     </div>
 
+    <!-- Leaflet JS for Free Maps -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        let map, marker;
+        let generatedOTP = null;
+        let isPhoneVerified = false;
+
+        // Map Setup
+        window.onload = function() {
+            map = L.map('map').setView([28.6139, 77.2090], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        };
+
+        // Get Live Current GPS Location
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    map.setView([lat, lon], 16);
+                    if (marker) map.removeLayer(marker);
+                    marker = L.marker([lat, lon]).addTo(map).bindPopup("आपकी करंट लोकेशन").openPopup();
+                    alert("आपकी करंट GPS लोकेशन मैप पर सेट हो गई है!");
+                }, () => alert("कृपया अपने ब्राउज़र में GPS / लोकेशन परमिशन अलाउ (Allow) करें।"));
+            } else {
+                alert("आपका ब्राउज़र GPS लोकेशन का समर्थन नहीं करता है।");
+            }
+        }
+
+        // Send OTP
+        function sendOTP() {
+            const mobile = document.getElementById('mobile').value;
+            if (mobile.length !== 10) {
+                alert("कृपया पहले 10 अंकों का सही मोबाइल नंबर दर्ज करें!");
+                return;
+            }
+            generatedOTP = Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('otpSection').style.display = 'block';
+            alert([CivicFix Alert]\nआपका OTP कोड है: ${generatedOTP});
+        }
+
+        // Verify OTP
+        function verifyOTP() {
+            const userOTP = document.getElementById('otpInput').value;
+            if (userOTP == generatedOTP && generatedOTP !== null) {
+                isPhoneVerified = true;
+                document.getElementById('otpMessage').innerText = "✓ मोबाइल नंबर सफलतापूर्वक सत्यापित (Verified) हो गया!";
+                alert("OTP वेरीफाई हो गया है!");
+            } else {
+                alert("गलत OTP! कृपया सही 4-अंकों का कोड दर्ज करें।");
+            }
+        }
+
+        // Form Submission
         document.getElementById('issueForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
+            // Strict Validation for OTP
+            if (!isPhoneVerified) {
+                alert("शिकायत दर्ज करने के लिए पहले 'OTP भेजें' पर क्लिक करके अपना मोबाइल नंबर वेरीफाई करें!");
+                return;
+            }
+
             const type = document.getElementById('issueType').value;
+            const mobile = document.getElementById('mobile').value;
+            const pincode = document.getElementById('pincode').value;
             const location = document.getElementById('location').value;
             const desc = document.getElementById('description').value;
+            const photoFile = document.getElementById('photo').files[0];
+            const trackId = "CF-" + Math.floor(100000 + Math.random() * 900000);
 
-            const newReport = document.createElement('div');
-            newReport.className = 'report-item';
-            newReport.innerHTML = `
-                <h3>${type}</h3>
-                <p><strong>स्थान:</strong> ${location}</p>
-                <p>${desc}</p>
-                <span class="badge">Submitted</span>
-            `;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgUrl = e.target.result;
+                const newReport = document.createElement('div');
+                newReport.className = 'report-item';
+                newReport.innerHTML = `
+                    <p class="tracking-id">Tracking ID: #${trackId}</p>
+                    <h3>${type} (पिन कोड: ${pincode})</h3>
+                    <p><strong>मोबाइल:</strong> ${mobile} <span class="badge badge-verified">Verified</span></p>
+                    <p><strong>पता:</strong> ${location}</p>
+                    <p><strong>विवरण:</strong> ${desc}</p>
+                    <img src="${imgUrl}" class="report-img" alt="Uploaded Issue Photo">
+                    <div><span class="badge">Status: Pending Verification</span></div>
+                `;
+                document.getElementById('reportsContainer').prepend(newReport);
 
-            document.getElementById('reportsContainer').prepend(newReport);
-            document.getElementById('issueForm').reset();
-            alert('आपकी शिकायत सफलतापूर्वक दर्ज कर ली गई है!');
+                // Reset Form
+                document.getElementById('issueForm').reset();
+                document.getElementById('otpSection').style.display = 'none';
+                document.getElementById('otpMessage').innerText = '';
+                isPhoneVerified = false;
+
+                alert(आपकी शिकायत सफलतापूर्वक दर्ज कर ली गई है!\nआपकी Tracking ID: #${trackId});
+            };
+            
+            if (photoFile) {
+                reader.readAsDataURL(photoFile);
+            }
         });
     </script>
 </body>
