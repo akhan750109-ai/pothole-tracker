@@ -4,38 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CivicFix - Smart Grievance Portal</title>
-    <!-- Leaflet CSS for Maps -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
         body { background-color: #f4f6f9; color: #333; }
         header { background-color: #1a252f; color: #fff; padding: 1.2rem; text-align: center; }
         .container { max-width: 800px; margin: 1.5rem auto; padding: 0 1rem; }
         .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
         .card h2 { color: #2c3e50; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5rem; }
         .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.7rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.4rem; font-weight: bold; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
         .btn-gps { background-color: #27ae60; color: white; border: none; padding: 0.8rem; border-radius: 4px; cursor: pointer; margin-bottom: 0.5rem; width: 100%; font-weight: bold; font-size: 1rem; }
-        .btn-gps:hover { background-color: #219150; }
-        .btn-otp { background-color: #2980b9; color: white; border: none; padding: 0.7rem 1rem; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 0.4rem; width: 100%; font-size: 0.95rem; }
+        .btn-otp { background-color: #2980b9; color: white; border: none; padding: 0.8rem; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 0.4rem; width: 100%; font-size: 1rem; }
         .btn-submit { background-color: #e74c3c; color: white; border: none; padding: 0.9rem; border-radius: 4px; cursor: pointer; font-size: 1.1rem; font-weight: bold; width: 100%; margin-top: 0.5rem; }
-        #map { height: 260px; width: 100%; border-radius: 6px; margin-bottom: 0.5rem; border: 2px solid #34495e; }
-        .map-hint { font-size: 0.85rem; color: #7f8c8d; margin-bottom: 0.5rem; }
-        .report-item { background: #fafafa; border-left: 5px solid #e74c3c; padding: 1rem; margin-bottom: 1rem; border-radius: 0 4px 4px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        #map { height: 260px; width: 100%; border-radius: 6px; margin-bottom: 0.5rem; border: 2px solid #2c3e50; }
+        .report-item { background: #fafafa; border-left: 5px solid #e74c3c; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
         .report-img { max-width: 100%; height: 200px; object-fit: cover; border-radius: 4px; margin-top: 0.5rem; }
-        .badge { display: inline-block; padding: 0.2rem 0.5rem; font-size: 0.8rem; border-radius: 3px; color: white; background-color: #e67e22; margin-top: 0.5rem; }
-        .badge-verified { background-color: #27ae60; }
-        .tracking-id { font-weight: bold; color: #2980b9; }
+        .badge { display: inline-block; padding: 0.3rem 0.6rem; font-size: 0.8rem; border-radius: 3px; color: white; background-color: #27ae60; margin-top: 0.5rem; }
         .otp-box { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
-        .otp-box input { flex: 1; text-align: center; font-size: 1.2rem; letter-spacing: 2px; }
-        .otp-box button { width: auto; margin-top: 0; background-color: #27ae60; }
-        .status-msg { font-weight: bold; color: #27ae60; font-size: 0.9rem; margin-top: 0.3rem; }
-
-        /* Modal Popup for OTP Display */
-        .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); }
-        .modal-content { background-color: #fff; margin: 15% auto; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .modal-btn { background-color: #2980b9; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 15px; font-weight: bold; }
+        .otp-box input { flex: 1; text-align: center; font-size: 1.2rem; }
+        .otp-box button { width: auto; margin-top: 0; }
+        .status-msg { font-weight: bold; color: #27ae60; font-size: 0.9rem; margin-top: 0.4rem; }
+        .hint-text { font-size: 0.85rem; color: #666; margin-top: 0.2rem; }
     </style>
 </head>
 <body>
@@ -46,297 +37,201 @@
     </header>
 
     <div class="container">
-        <!-- Complaint Form -->
         <div class="card">
             <h2>नई शिकायत दर्ज करें (Report Grievance)</h2>
-            <form id="issueForm">
-                
-                <div class="form-group">
-                    <label>समस्या का प्रकार (Issue Type)</label>
-                    <select id="issueType" required>
-                        <option value="Pothole">सड़क का गड्ढा (Pothole)</option>
-                        <option value="Waterlogging">जलभराव (Waterlogging)</option>
-                        <option value="Damaged Road">टूटी सड़क (Damaged Road)</option>
-                    </select>
-                </div>
+            
+            <div class="form-group">
+                <label>समस्या का प्रकार (Issue Type)</label>
+                <select id="issueType">
+                    <option value="Pothole">सड़क का गड्ढा (Pothole)</option>
+                    <option value="Waterlogging">जलभराव (Waterlogging)</option>
+                    <option value="Damaged Road">टूटी सड़क (Damaged Road)</option>
+                </select>
+            </div>
 
-                <!-- Mobile & OTP Verification -->
-                <div class="form-group">
-                    <label>मोबाइल नंबर (Mobile Number)</label>
-                    <input type="tel" id="mobile" placeholder="10 अंकों का मोबाइल नंबर दर्ज करें" maxlength="13" required>
-                    <button type="button" class="btn-otp" id="sendOtpBtn">OTP प्राप्त करें (Get OTP)</button>
-                </div>
+            <!-- Mobile Field -->
+            <div class="form-group">
+                <label>मोबाइल नंबर (Mobile Number)</label>
+                <input type="text" id="mobile" placeholder="अपना 10 अंकों का मोबाइल नंबर दर्ज करें">
+                <button type="button" class="btn-otp" onclick="sendOTPNow()">OTP प्राप्त करें (Get OTP)</button>
+            </div>
 
-                <div class="form-group" id="otpSection" style="display:none;">
-                    <label>OTP सत्यापित करें (Enter Verification Code)</label>
-                    <div class="otp-box">
-                        <input type="text" id="otpInput" placeholder="4-अंकों का OTP" maxlength="4">
-                        <button type="button" class="btn-otp" id="verifyOtpBtn">Verify OTP</button>
-                    </div>
-                    <div id="otpMessage" class="status-msg"></div>
+            <!-- OTP Verification Section -->
+            <div class="form-group" id="otpSection" style="display:none;">
+                <label>OTP सत्यापित करें</label>
+                <div class="otp-box">
+                    <input type="text" id="otpInput" placeholder="4-अंकों का OTP लिखें" maxlength="4">
+                    <button type="button" class="btn-otp" style="background-color:#27ae60;" onclick="verifyOTPNow()">Verify OTP</button>
                 </div>
+                <div id="otpMessage" class="status-msg"></div>
+            </div>
 
-                <!-- GPS Location and Interactive Map -->
-                <div class="form-group">
-                    <label>आपकी करंट लोकेशन (Current Location)</label>
-                    <button type="button" class="btn-gps" id="getGpsBtn">📍 ऑटो-डिटेक्ट GPS लोकेशन सेट करें</button>
-                    <p class="map-hint">💡 नोट: अगर GPS न चले, तो नीचे मैप पर अपनी लोकेशन पर सीधा क्लिक करें।</p>
-                    <div id="map"></div>
-                    <input type="hidden" id="geoCoordinates" value="">
-                </div>
+            <!-- GPS and Map Section -->
+            <div class="form-group">
+                <label>आपकी करंट लोकेशन (Current Location)</label>
+                <button type="button" class="btn-gps" onclick="getGPSNow()">📍 ऑटो-डिटेक्ट GPS लोकेशन सेट करें</button>
+                <p class="hint-text">💡 नोट: अगर GPS काम न करे, तो सीधे नीचे मैप पर टैप/क्लिक करके लोकेशन चुनें।</p>
+                <div id="map"></div>
+            </div>
 
-                <!-- Pincode -->
-                <div class="form-group">
-                    <label>पिन कोड (Pincode)</label>
-                    <input type="text" id="pincode" placeholder="उदा: 247774" pattern="[0-9]{6}" maxlength="6" required>
-                </div>
+            <div class="form-group">
+                <label>पिन कोड (Pincode)</label>
+                <input type="text" id="pincode" placeholder="उदा: 247774" maxlength="6">
+            </div>
 
-                <div class="form-group">
-                    <label>स्थान / पता (Landmark / Address)</label>
-                    <input type="text" id="location" placeholder="उदा: मुख्य बाज़ार रोड, कैराना" required>
-                </div>
+            <div class="form-group">
+                <label>स्थान / पता (Landmark / Address)</label>
+                <input type="text" id="location" placeholder="उदा: मुख्य बाज़ार रोड, कैराना">
+            </div>
 
-                <!-- 1 Photo Upload -->
-                <div class="form-group">
-                    <label>समस्या की 1 फोटो अपलोड करें (Upload Photo)</label>
-                    <input type="file" id="photo" accept="image/*" capture="environment" required>
-                </div>
+            <div class="form-group">
+                <label>समस्या की 1 फोटो अपलोड करें (Upload Photo)</label>
+                <input type="file" id="photo" accept="image/*">
+            </div>
 
-                <div class="form-group">
-                    <label>विवरण (Description)</label>
-                    <textarea id="description" rows="2" placeholder="समस्या का विवरण दर्ज करें..." required></textarea>
-                </div>
+            <div class="form-group">
+                <label>विवरण (Description)</label>
+                <textarea id="description" rows="2" placeholder="समस्या का विवरण दर्ज करें..."></textarea>
+            </div>
 
-                <button type="submit" class="btn-submit">शिकायत दर्ज करें (Submit Complaint)</button>
-            </form>
+            <button type="button" class="btn-submit" onclick="submitFormNow()">शिकायत दर्ज करें (Submit Complaint)</button>
         </div>
 
-        <!-- Live Grievance List -->
         <div class="card">
             <h2>हाल ही में दर्ज शिकायतें (Live Grievance Tracker)</h2>
             <div id="reportsContainer"></div>
         </div>
     </div>
 
-    <!-- OTP Display Modal -->
-    <div id="otpModal" class="modal">
-        <div class="modal-content">
-            <h3 style="color:#2c3e50; margin-bottom:10px;">📲 CivicFix Verification</h3>
-            <p style="font-size:1.1rem;">आपका 4-अंकों का OTP कोड है:</p>
-            <h1 id="modalOtpCode" style="color:#e74c3c; font-size:2.5rem; letter-spacing:4px; margin:10px 0;">0000</h1>
-            <p style="font-size:0.85rem; color:#7f8c8d;">इसे 'OTP सत्यापित करें' बॉक्स में दर्ज करें।</p>
-            <button class="modal-btn" onclick="closeModal()">ठीक है (OK)</button>
-        </div>
-    </div>
-
-    <!-- Leaflet JS for Maps -->
+    <!-- Leaflet Map JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        let map, marker;
-        let generatedOTP = null;
-        let isPhoneVerified = false;
+        var map, marker;
+        var myOTP = null;
+        var isVerified = false;
 
-        // Initialize Map
-        window.addEventListener('load', function() {
-            // Default center (India)
-            const defaultLat = 28.6139;
-            const defaultLng = 77.2090;
+        // Initialize Map immediately
+        window.onload = function() {
+            try {
+                map = L.map('map').setView([28.6139, 77.2090], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                marker = L.marker([28.6139, 77.2090]).addTo(map).bindPopup("यहाँ क्लिक करके लोकेशन चुनें").openPopup();
 
-            map = L.map('map').setView([defaultLat, defaultLng], 12);
+                map.on('click', function(e) {
+                    marker.setLatLng(e.latlng);
+                    map.setView(e.latlng, 15);
+                    marker.bindPopup("लोकेशन सेट हो गई: " + e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4)).openPopup();
+                });
+            } catch(e) {
+                console.log("Map Error: ", e);
+            }
+        };
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '© OpenStreetMap'
-            }).addTo(map);
-
-            marker = L.marker([defaultLat, defaultLng], {draggable: true}).addTo(map)
-                .bindPopup("मैप पर टैप करें या मार्कर ड्रैग करें।")
-                .openPopup();
-
-            document.getElementById('geoCoordinates').value = ${defaultLat}, ${defaultLng};
-
-            // Map click listener to set marker anywhere
-            map.on('click', function(e) {
-                const lat = e.latlng.lat.toFixed(6);
-                const lng = e.latlng.lng.toFixed(6);
-                marker.setLatLng(e.latlng);
-                map.setView(e.latlng, 15);
-                document.getElementById('geoCoordinates').value = ${lat}, ${lng};
-                marker.bindPopup(लोकेशन चुनी गई: ${lat}, ${lng}).openPopup();
-            });
-        });
-
-        // GPS Location Click Handler
-        document.getElementById('getGpsBtn').addEventListener('click', function() {
-            if ("geolocation" in navigator) {
+        // GPS Function
+        function getGPSNow() {
+            if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    position => {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        const userLatLng = [lat, lng];
-
-                        map.setView(userLatLng, 16);
-                        marker.setLatLng(userLatLng);
-                        document.getElementById('geoCoordinates').value = ${lat.toFixed(6)}, ${lng.toFixed(6)};
-                        marker.bindPopup("✅ आपकी सटीक GPS लोकेशन मिल गई है!").openPopup();
-                        alert("✅ आपकी GPS लोकेशन मैप पर सेट कर दी गई है!");
+                    function(pos) {
+                        var lat = pos.coords.latitude;
+                        var lng = pos.coords.longitude;
+                        map.setView([lat, lng], 16);
+                        marker.setLatLng([lat, lng]).bindPopup("आपकी लाइव GPS लोकेशन").openPopup();
+                        alert("✅ GPS लोकेशन मैप पर सेट हो गई है!");
                     },
-                    error => {
-                        alert("⚠️ GPS ऑटो-डिटेक्ट काम नहीं कर रहा है। कृपया नीचे दिए गए मैप पर सीधे उस जगह क्लिक/टैप करें जहाँ समस्या है।");
+                    function(err) {
+                        alert("⚠️ GPS ऑटो-डिटेक्ट चालू नहीं हो सका। आप नीचे दिए गए मैप पर सीधा क्लिक करके लोकेशन चुन सकते हैं।");
                     },
-                    { enableHighAccuracy: true, timeout: 8000 }
+                    { enableHighAccuracy: true, timeout: 5000 }
                 );
             } else {
-                alert("ब्राउज़र GPS को सपोर्ट नहीं कर रहा है। कृपया सीधे मैप पर क्लिक करें।");
+                alert("ब्राउज़र GPS को सपोर्ट नहीं करता। मैप पर सीधे क्लिक करें।");
             }
-        });
-
-        // Send OTP Button
-        document.getElementById('sendOtpBtn').addEventListener('click', function() {
-            let mobileInput = document.getElementById('mobile').value.trim();
-            
-            // Clean mobile string
-            let cleanNumber = mobileInput.replace(/[^0-9]/g, '');
-            if (cleanNumber.length > 10) {
-                cleanNumber = cleanNumber.slice(-10); // Take last 10 digits
-            }
-
-            if (cleanNumber.length !== 10) {
-                alert("कृपया एक वैध 10 अंकों का मोबाइल नंबर दर्ज करें।");
-                return;
-            }
-
-            // Generate 4-digit random OTP
-            generatedOTP = Math.floor(1000 + Math.random() * 9000).toString();
-
-            // Display Modal for immediate testing & UI flow
-            document.getElementById('modalOtpCode').innerText = generatedOTP;
-            document.getElementById('otpModal').style.display = "block";
-
-            // Show OTP section in form
-            document.getElementById('otpSection').style.display = 'block';
-            document.getElementById('otpMessage').style.color = '#3498db';
-            document.getElementById('otpMessage').innerText = OTP भेजा गया! नीचे वाले बॉक्स में OTP डालें।;
-
-            /* 
-               * Note: यदि आप Fast2SMS जैसी सर्विस से मोबाइल सिम पर असली SMS भेजना चाहते हैं:
-               * uncomment करके नीचे अपनी API key लगाएं:
-               * 
-               * fetch(https://www.fast2sms.com/dev/bulkV2?authorization=YOUR_API_KEY&variables_values=${generatedOTP}&route=otp&numbers=${cleanNumber});
-            */
-        });
-
-        function closeModal() {
-            document.getElementById('otpModal').style.display = "none";
         }
 
-        // Verify OTP Button
-        document.getElementById('verifyOtpBtn').addEventListener('click', function() {
-            let enteredOTP = document.getElementById('otpInput').value.trim();
+        // Send OTP Function
+        function sendOTPNow() {
+            var mobileVal = document.getElementById('mobile').value;
+            var cleanDigits = mobileVal.replace(/[^0-9]/g, '');
 
-            if (enteredOTP === generatedOTP && generatedOTP !== null) {
-                isPhoneVerified = true;
-                let msg = document.getElementById('otpMessage');
-                msg.style.color = '#27ae60';
-                msg.innerText = "✅ मोबाइल नंबर सफलतापूर्वक सत्यापित (Verified) हो गया है!";
-                document.getElementById('mobile').readOnly = true;
-                document.getElementById('sendOtpBtn').disabled = true;
-                document.getElementById('verifyOtpBtn').disabled = true;
-            } else {
-                let msg = document.getElementById('otpMessage');
-                msg.style.color = '#e74c3c';
-                msg.innerText = "❌ गलत OTP! कृपया दोबारा सही OTP दर्ज करें।";
-            }
-        });
-
-        // Form Submission
-        document.getElementById('issueForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            if (!isPhoneVerified) {
-                alert("⚠️ शिकायत दर्ज करने से पहले कृपया अपना मोबाइल नंबर OTP से सत्यापित करें!");
+            if (cleanDigits.length < 10) {
+                alert("कृपया कम से कम 10 अंकों का मोबाइल नंबर दर्ज करें!");
                 return;
             }
 
-            const issueType = document.getElementById('issueType').value;
-            const mobile = document.getElementById('mobile').value;
-            const pincode = document.getElementById('pincode').value;
-            const location = document.getElementById('location').value;
-            const description = document.getElementById('description').value;
-            const photoInput = document.getElementById('photo');
-            const geoCoordinates = document.getElementById('geoCoordinates').value;
+            var finalNumber = cleanDigits.slice(-10);
+            myOTP = Math.floor(1000 + Math.random() * 9000).toString();
+            
+            document.getElementById('otpSection').style.display = 'block';
+            alert("📲 [CivicFix Alert]\n\nनंबर: " + finalNumber + "\nआपका OTP कोड है: " + myOTP + "\n\nइसे 'OTP सत्यापित करें' बॉक्स में दर्ज करें।");
+        }
 
-            // Generate Tracking ID
-            const trackingId = 'CF-' + Math.floor(100000 + Math.random() * 900000);
+        // Verify OTP Function
+        function verifyOTPNow() {
+            var inputOTP = document.getElementById('otpInput').value.trim();
+            if (inputOTP === myOTP && myOTP !== null) {
+                isVerified = true;
+                document.getElementById('otpMessage').innerText = "✅ मोबाइल नंबर सफलतापूर्वक सत्यापित हो गया!";
+                alert("✅ OTP सत्यापित हो गया!");
+            } else {
+                alert("❌ गलत OTP! कृपया सही 4 अंकों का कोड दर्ज करें।");
+            }
+        }
 
-            // Read Photo
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const photoData = e.target.result;
+        // Submit Complaint Function
+        function submitFormNow() {
+            if (!isVerified) {
+                alert("⚠️ कृपया शिकायत दर्ज करने से पहले OTP सत्यापित करें!");
+                return;
+            }
 
-                // Create report object
-                const report = {
-                    trackingId,
-                    issueType,
-                    mobile,
-                    pincode,
-                    location,
-                    description,
-                    geoCoordinates,
-                    photoData,
-                    status: 'Open',
-                    date: new Date().toLocaleDateString('hi-IN')
-                };
+            var type = document.getElementById('issueType').value;
+            var mobile = document.getElementById('mobile').value;
+            var pincode = document.getElementById('pincode').value;
+            var location = document.getElementById('location').value;
+            var desc = document.getElementById('description').value;
+            var photoFile = document.getElementById('photo').files[0];
 
-                // Save to localStorage
-                let reports = JSON.parse(localStorage.getItem('civic_reports') || '[]');
-                reports.unshift(report);
-                localStorage.setItem('civic_reports', JSON.stringify(reports));
+            if (!pincode || !location || !desc) {
+                alert("कृपया सभी फ़ील्ड्स (पिन कोड, स्थान और विवरण) भरें!");
+                return;
+            }
 
-                alert(🎉 आपकी शिकायत सफलता पूर्वक दर्ज हो गई है!\nआपकी ट्रैकिंग आईडी है: ${trackingId});
-                document.getElementById('issueForm').reset();
+            var trackId = 'CF-' + Math.floor(100000 + Math.random() * 900000);
+
+            var processReport = function(imgUrl) {
+                var container = document.getElementById('reportsContainer');
+                var newCard = document.createElement('div');
+                newCard.className = 'report-item';
+                newCard.innerHTML = `
+                    <h3>Tracking ID: #${trackId} - ${type}</h3>
+                    <p><strong>पिन कोड:</strong> ${pincode} | <strong>मोबाइल:</strong> ${mobile} <span class="badge">Verified</span></p>
+                    <p><strong>पता:</strong> ${location}</p>
+                    <p><strong>विवरण:</strong> ${desc}</p>
+                    ${imgUrl ? <img src="${imgUrl}" class="report-img"> : ''}
+                `;
+                container.prepend(newCard);
+
+                // Reset
+                document.getElementById('mobile').value = '';
+                document.getElementById('pincode').value = '';
+                document.getElementById('location').value = '';
+                document.getElementById('description').value = '';
+                document.getElementById('photo').value = '';
                 document.getElementById('otpSection').style.display = 'none';
-                isPhoneVerified = false;
-                document.getElementById('mobile').readOnly = false;
-                document.getElementById('sendOtpBtn').disabled = false;
-                document.getElementById('verifyOtpBtn').disabled = false;
+                document.getElementById('otpMessage').innerText = '';
+                isVerified = false;
 
-                loadReports();
+                alert("🎉 आपकी शिकायत दर्ज हो गई है! Tracking ID: #" + trackId);
             };
 
-            if (photoInput.files[0]) {
-                reader.readAsDataURL(photoInput.files[0]);
+            if (photoFile) {
+                var reader = new FileReader();
+                reader.onload = function(e) { processReport(e.target.result); };
+                reader.readAsDataURL(photoFile);
+            } else {
+                processReport('');
             }
-        });
-
-        // Load Saved Reports
-        function loadReports() {
-            const container = document.getElementById('reportsContainer');
-            const reports = JSON.parse(localStorage.getItem('civic_reports') || '[]');
-
-            if (reports.length === 0) {
-                container.innerHTML = "<p>अभी तक कोई शिकायत दर्ज नहीं की गई है।</p>";
-                return;
-            }
-
-            container.innerHTML = reports.map(r => `
-                <div class="report-item">
-                    <div><span class="tracking-id">आईडी: ${r.trackingId}</span> - <strong>${r.issueType}</strong></div>
-                    <div style="font-size:0.9rem; margin-top:0.3rem;">
-                        <strong>📍 स्थान:</strong> ${r.location} (पिन कोड: ${r.pincode})<br>
-                        <strong>🌐 GPS:</strong> ${r.geoCoordinates}<br>
-                        <strong>📱 फ़ोन:</strong> ${r.mobile} <span style="color:#27ae60;">(Verified)</span><br>
-                        <strong>📝 विवरण:</strong> ${r.description}<br>
-                        <strong>📅 दिनांक:</strong> ${r.date}
-                    </div>
-                    ${r.photoData ? <img src="${r.photoData}" class="report-img" alt="Issue Photo"> : ''}
-                    <div><span class="badge">स्थिति: ${r.status}</span></div>
-                </div>
-            `).join('');
         }
-
-        // Initial Load
-        loadReports();
     </script>
 </body>
 </html>
